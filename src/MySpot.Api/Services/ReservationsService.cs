@@ -2,20 +2,21 @@
 using MySpot.Api.DTO;
 using MySpot.Api.Entities;
 using MySpot.Api.Models;
+using MySpot.Api.ValueObjects;
 
 namespace MySpot.Api.Services;
 
 public class ReservationsService
 {
-    private static Clock _clock = new();
+    private static Clock Clock = new();
     
     private static readonly List<WeeklyParkingSpot> WeeklyParkingSpots = new()
     {
-        new WeeklyParkingSpot(Guid.NewGuid(), "P1", _clock.Current(), _clock.Current().AddDays(7)),
-        new WeeklyParkingSpot(Guid.NewGuid(), "P2", _clock.Current(), _clock.Current().AddDays(7)),
-        new WeeklyParkingSpot(Guid.NewGuid(), "P3", _clock.Current(), _clock.Current().AddDays(7)),
-        new WeeklyParkingSpot(Guid.NewGuid(), "P4", _clock.Current(), _clock.Current().AddDays(7)),
-        new WeeklyParkingSpot(Guid.NewGuid(), "P5", _clock.Current(), _clock.Current().AddDays(7)),
+        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000001"), new Week(Clock.Current()), "P1"),
+        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000002"), new Week(Clock.Current()), "P2"),
+        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000003"), new Week(Clock.Current()), "P3"),
+        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000004"), new Week(Clock.Current()), "P4"),
+        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000005"), new Week(Clock.Current()), "P5"),
     };
     
     
@@ -26,16 +27,17 @@ public class ReservationsService
                 Id = x.Id,
                 ParkingSpotId = x.ParkingSpotId,
                 EmployeeName = x.EmployeeName,
-                Date = x.Date
+                Date = x.Date.Value.Date
             });
 
     public ReservationDto Get(Guid id)
         => GetAllWeekly().SingleOrDefault(x => x.Id == id);
 
     public Guid? Create(CreateReservation command)
-    { 
+    {
+        var parkingSpotId = new ParkingSpotId(command.ParkingSpotId);
         var weeklyParkingSpot = WeeklyParkingSpots
-            .SingleOrDefault(x => x.Id == command.ParkingSpotId);
+            .SingleOrDefault(x => x.Id == parkingSpotId);
         if (weeklyParkingSpot is null)
         {
             return default;
@@ -46,9 +48,9 @@ public class ReservationsService
             command.ParkingSpotId,
             command.EmployeeName,
             command.LicensePlate,
-            command.Date);
+            new Date(command.Date));
 
-        weeklyParkingSpot.AddReservation(reservation, _clock.Current());
+        weeklyParkingSpot.AddReservation(reservation, new Date(Clock.Current()));
 
         return reservation.Id;
     }
@@ -63,11 +65,11 @@ public class ReservationsService
         {
             return false;
         }
-        
-        
+
+        var reservationId = new ReservationId(command.ReservationId);
         //  Find the reservation with the given ID
         var existingReservation = weeklyParkingSpot.Reservations
-            .SingleOrDefault(x => x.Id == command.ReservationId);
+            .SingleOrDefault(x => x.Id == reservationId);
         
         //  Check if the reservation was found
         if (existingReservation is null)
@@ -77,12 +79,11 @@ public class ReservationsService
         
 
         //  Check if the reservation is in the past
-        if (existingReservation.Date <= _clock.Current())
+        if (existingReservation.Date.Value.Date <= Clock.Current())
         {
             return false;
         }
-        
-        
+
         // Update the reservation
         existingReservation.ChangeLicensePlate(command.LicensePlate);
         
@@ -102,8 +103,9 @@ public class ReservationsService
         
         
         // Find the reservation with the given ID
+        var reservationId = new ReservationId(command.ReservationId);
         var existingReservation = weeklyParkingSpot.Reservations
-            .SingleOrDefault(x => x.Id == command.ReservationId); 
+            .SingleOrDefault(x => x.Id == reservationId); 
         
         // Check if the reservation was found
         if (existingReservation is null)
@@ -119,7 +121,7 @@ public class ReservationsService
     }
     
     //  Find the reservation with the given ID
-    private WeeklyParkingSpot GetWeeklyParkingSpotByReservation(Guid reservationId)
+    private WeeklyParkingSpot GetWeeklyParkingSpotByReservation(ReservationId reservationId)
         => WeeklyParkingSpots.
             SingleOrDefault(x => x.Reservations.Any(r => r.Id == reservationId));
 

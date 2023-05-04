@@ -1,5 +1,6 @@
 ﻿using MySpot.Api.Exceptions;
 using MySpot.Api.Models;
+using MySpot.Api.ValueObjects;
 
 namespace MySpot.Api.Entities;
 
@@ -7,36 +8,34 @@ public class WeeklyParkingSpot
 {
     private readonly HashSet<Reservation> _reservations = new();
 
-    public Guid Id { get; }
-    public DateTime From { get; }
-    public DateTime To { get; }
+    public ParkingSpotId Id { get; }
+    public Week Week { get; }
     public string Name { get; }
     
     public IEnumerable<Reservation> Reservations => _reservations;
     
-    public WeeklyParkingSpot(Guid id, string name, DateTime from, DateTime to)
+    public WeeklyParkingSpot(ParkingSpotId id, Week week, string name)
     {
         Id = id;
+        Week = week;
         Name = name;
-        From = from;
-        To = to;
     }
     
-    public void AddReservation(Reservation reservation, DateTime now)
+    public void AddReservation(Reservation reservation, Date now)
     {
         // Check if the reservation is valid
-        var isInvalidDate = reservation.Date.Date < From || 
-                            reservation.Date.Date > To || 
-                            reservation.Date.Date < now;
+        var isInvalidDate = reservation.Date < Week.From || 
+                            reservation.Date > Week.To || 
+                            reservation.Date < now;
          if (isInvalidDate)
          {
-             throw new InvalidReservationDateException(reservation.Date);
+             throw new InvalidReservationDateException(reservation.Date.Value.Date);
          }
          
          // Check if the reservation already exists
-         if (Reservations.Any(x => x.Date.Date == reservation.Date.Date))
+         if (Reservations.Any(x => x.Date == reservation.Date))
          { 
-             throw new ParkingSpotAlreadyReservedException(Name, reservation.Date);
+             throw new ParkingSpotAlreadyReservedException(Name, reservation.Date.Value.Date);
          }
          
          // Add the reservation
@@ -44,17 +43,7 @@ public class WeeklyParkingSpot
     }
     
     //  Remove the reservation with the given ID
-    public void RemoveReservation(Guid reservationId)
-    {   
-        //  Find the reservation with the given ID
-        var reservation = _reservations.SingleOrDefault(x => x.Id == reservationId);
-        
-        //  Check if the reservation was found
-        if (reservation is null)
-        {
-            throw new ReservationNotFoundException(reservationId);
-        }
-        
-        _reservations.Remove(reservation);
-    }
+    public void RemoveReservation(ReservationId reservationId)
+        => _reservations.RemoveWhere(x => x.Id == reservationId);
+
 }
