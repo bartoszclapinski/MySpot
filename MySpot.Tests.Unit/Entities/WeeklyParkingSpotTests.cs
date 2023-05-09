@@ -46,6 +46,7 @@ public class WeeklyParkingSpotTests
     [Fact]
     public void given_reservation_for_already_existing_date_add_reservation_should_fail()
     {
+        //  Arrange
         var reservationDate = _now.AddDays(1);
         var reservation = new Reservation(Guid.NewGuid(), _weeklyParkingSpot.Id, "John Doe",
             "XYZ123", reservationDate);
@@ -53,10 +54,27 @@ public class WeeklyParkingSpotTests
             "XYZ123", reservationDate);
         _weeklyParkingSpot.AddReservation(reservation, _now);
         
+        //  Act  
         var exception = Record.Exception(() => _weeklyParkingSpot.AddReservation(nextReservation, reservationDate));
         
+        //  Assert
         exception.ShouldNotBeNull();
         exception.ShouldBeOfType<ParkingSpotAlreadyReservedException>();
+    }
+    
+    [Fact]
+    public void given_reservation_for_not_taken_date_add_reservation_should_succeed()
+    {
+        //  Arrange
+        var reservationDate = _now.AddDays(1);
+        var reservation = new Reservation(Guid.NewGuid(), _weeklyParkingSpot.Id, "John Doe",
+            "XYZ123", reservationDate);
+        
+        //  Act
+        _weeklyParkingSpot.AddReservation(reservation, _now);
+        
+        //  Assert
+        _weeklyParkingSpot.Reservations.ShouldHaveSingleItem();
     }
     
 }
