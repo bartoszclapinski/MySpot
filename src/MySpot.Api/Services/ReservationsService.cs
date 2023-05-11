@@ -9,20 +9,17 @@ namespace MySpot.Api.Services;
 public class ReservationsService
 {
     private static Clock Clock = new();
+    private readonly List<WeeklyParkingSpot> _weeklyParkingSpots;
     
-    private static readonly List<WeeklyParkingSpot> WeeklyParkingSpots = new()
+    
+
+    public ReservationsService(List<WeeklyParkingSpot> weeklyParkingSpots)
     {
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000001"), new Week(Clock.Current()), "P1"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000002"), new Week(Clock.Current()), "P2"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000003"), new Week(Clock.Current()), "P3"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000004"), new Week(Clock.Current()), "P4"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000005"), new Week(Clock.Current()), "P5"),
-    };
-    
-    
+        _weeklyParkingSpots = weeklyParkingSpots;
+    }
     
     public IEnumerable<ReservationDto> GetAllWeekly()        
-        => WeeklyParkingSpots.SelectMany(x => x.Reservations)
+        => _weeklyParkingSpots.SelectMany(x => x.Reservations)
             .Select(x => new ReservationDto {
                 Id = x.Id,
                 ParkingSpotId = x.ParkingSpotId,
@@ -36,7 +33,7 @@ public class ReservationsService
     public Guid? Create(CreateReservation command)
     {
         var parkingSpotId = new ParkingSpotId(command.ParkingSpotId);
-        var weeklyParkingSpot = WeeklyParkingSpots
+        var weeklyParkingSpot = _weeklyParkingSpots
             .SingleOrDefault(x => x.Id == parkingSpotId);
         if (weeklyParkingSpot is null)
         {
@@ -122,7 +119,7 @@ public class ReservationsService
     
     //  Find the reservation with the given ID
     private WeeklyParkingSpot GetWeeklyParkingSpotByReservation(ReservationId reservationId)
-        => WeeklyParkingSpots.
+        => _weeklyParkingSpots.
             SingleOrDefault(x => x.Reservations.Any(r => r.Id == reservationId));
 
 }
