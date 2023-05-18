@@ -1,6 +1,6 @@
 ﻿namespace MySpot.Api.Services;
 
-public class Clock
+public class clock
 {
     public DateTime Current() => DateTime.UtcNow;
 }

@@ -12,23 +12,20 @@ namespace MySpot.Api.Controllers;
 [Route("api/[controller]")]
 public class ReservationsController : ControllerBase
 {
-    private static readonly Clock Clock = new();
-    private static readonly ReservationsService _service = new(new()
+    private readonly ReservationsService _reservationsService;
+
+    public ReservationsController(ReservationsService reservationsService)
     {
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000001"), new Week(Clock.Current()), "P1"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000002"), new Week(Clock.Current()), "P2"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000003"), new Week(Clock.Current()), "P3"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000004"), new Week(Clock.Current()), "P4"),
-        new WeeklyParkingSpot(Guid.Parse("00000000-0000-0000-0000-000000000005"), new Week(Clock.Current()), "P5"),
-    });
+        _reservationsService = reservationsService;
+    }
 
     [HttpGet]   
-    public IEnumerable<ReservationDto> Get() => _service.GetAllWeekly();  
+    public IEnumerable<ReservationDto> Get() => _reservationsService.GetAllWeekly();  
     
     [HttpGet("{id:Guid}")]
     public ActionResult<Reservation> Get(Guid id)
     {
-        var reservation = _service.Get(id);
+        var reservation = _reservationsService.Get(id);
         
         // Check if the reservation was found
         if (reservation is null)
@@ -44,7 +41,7 @@ public class ReservationsController : ControllerBase
     public ActionResult Post(CreateReservation command)
     {
         // Create the reservation
-        var id = _service.Create(command with {ReservationId = Guid.NewGuid()});
+        var id = _reservationsService.Create(command with {ReservationId = Guid.NewGuid()});
         
         //  Check if the reservation was created
         if (id is null)
@@ -60,7 +57,7 @@ public class ReservationsController : ControllerBase
     public ActionResult Put(Guid id, ChangeReservationLicensePlate command)
     {
         // Check if the reservation was updated
-        if (_service.Update(command with {ReservationId = id}))
+        if (_reservationsService.Update(command with {ReservationId = id}))
         {
             return NoContent();
         }
@@ -72,7 +69,7 @@ public class ReservationsController : ControllerBase
     public ActionResult Delete(Guid id)
     {
         // Check if the reservation was deleted
-        if (_service.Delete(new DeleteReservation(id)))
+        if (_reservationsService.Delete(new DeleteReservation(id)))
         {
             return NoContent();
         }

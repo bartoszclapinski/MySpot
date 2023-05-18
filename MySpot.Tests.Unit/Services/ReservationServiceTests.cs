@@ -15,7 +15,7 @@ public class ReservationServiceTests
     #region Arrange
 
     private readonly ReservationsService _reservationsService;
-    private readonly Clock _clock = new();
+    private readonly clock _clock = new();
     private readonly List<WeeklyParkingSpot> _weeklyParkingSpots;
     
     
